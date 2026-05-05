@@ -67,6 +67,12 @@ function tryStartAudio() {
   void litanyAudio.start();
 }
 
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
 }
