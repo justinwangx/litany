@@ -57,6 +57,8 @@ let renderedStill = false;
 let startTime = 0;
 let lastFrame = 0;
 let motionTime = 0;
+let appWasHidden = false;
+let lastAppReturnRestart = 0;
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const litanyDuration = 40;
 const litanyAudio = createLitanyAudio();
@@ -84,6 +86,19 @@ function clamp(value, min, max) {
 function smoothstep(edge0, edge1, value) {
   const x = clamp((value - edge0) / (edge1 - edge0), 0, 1);
   return x * x * (3 - 2 * x);
+}
+
+function isStandaloneApp() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    window.navigator.standalone === true
+  );
+}
+
+function sceneHasEnded(now = performance.now()) {
+  if (renderedStill || reduceMotion.matches) return true;
+  return Boolean(startTime) && (now - startTime) / 1000 >= litanyDuration;
 }
 
 function resetParticle(p, burst = false) {
@@ -245,7 +260,7 @@ window.addEventListener("resize", () => {
 
 function restartScene() {
   tryStartAudio();
-  if (!renderedStill) return;
+  if (!sceneHasEnded()) return;
 
   document.body.classList.add("is-resetting");
   litanyAudio.restart();
@@ -262,8 +277,39 @@ function restartScene() {
   requestAnimationFrame(render);
 }
 
+function restartFinishedSceneOnAppReturn(force = false) {
+  if (!isStandaloneApp() || document.visibilityState !== "visible") return;
+  if (!appWasHidden && !force) return;
+  if (!sceneHasEnded()) return;
+
+  const now = performance.now();
+  if (now - lastAppReturnRestart < 800) return;
+
+  lastAppReturnRestart = now;
+  appWasHidden = false;
+  restartScene();
+}
+
 window.addEventListener("click", restartScene);
+window.addEventListener("pointerup", restartScene, { passive: true });
 window.addEventListener("pointerdown", tryStartAudio, { passive: true });
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    appWasHidden = true;
+    return;
+  }
+
+  restartFinishedSceneOnAppReturn();
+});
+
+window.addEventListener("focus", () => {
+  restartFinishedSceneOnAppReturn();
+});
+
+window.addEventListener("pageshow", (event) => {
+  restartFinishedSceneOnAppReturn(event.persisted);
+});
 
 window.addEventListener("keydown", (event) => {
   if (event.code !== "Space") return;
