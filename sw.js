@@ -1,4 +1,4 @@
-const CACHE_NAME = "litany-of-fear-v2";
+const CACHE_NAME = "litany-against-fear-v1";
 const ASSETS = [
   "./",
   "./index.html",

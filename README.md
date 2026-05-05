@@ -1,4 +1,4 @@
-# LITANY OF FEAR
+# LITANY AGAINST FEAR
 
 A browser artwork that displays the Bene Gesserit litany.
 
