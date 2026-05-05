@@ -181,15 +181,8 @@ vec3 storm(vec2 uv) {
   color += vec3(1.0, 0.42, 0.09) * nearDust * 0.12;
   color += vec3(1.0, 0.36, 0.065) * frontDust * 0.12;
 
-  vec2 pixelDustA = floor((uv + vec2(5.0)) * uResolution.y * 0.95 + vec2(-t * 620.0, t * 170.0));
-  vec2 pixelDustB = floor((uv + vec2(7.0)) * uResolution.y * 0.42 + vec2(-t * 260.0, t * 90.0));
-  vec2 pixelDustC = floor((uv + vec2(2.0)) * uResolution.y * 0.28 + vec2(t * 110.0, -t * 310.0));
-  float pinDust = smoothstep(0.986, 1.0, hash21(pixelDustA));
-  float emberDust = smoothstep(0.972, 1.0, hash21(pixelDustB));
-  float blackGrit = smoothstep(0.982, 1.0, hash21(pixelDustC));
-  color += vec3(1.0, 0.48, 0.11) * pinDust * 0.5;
-  color += vec3(0.95, 0.22, 0.035) * emberDust * 0.36;
-  color -= vec3(0.18, 0.055, 0.012) * blackGrit * 0.18;
+  float filmGrit = fbm(uv * vec2(78.0, 46.0) + vec2(t * 5.2, -t * 3.7));
+  color += vec3(0.12, 0.03, 0.006) * (filmGrit - 0.5) * 0.08;
 
   float thickVeil = fbm(uv * vec2(1.8, 2.7) + vec2(t * 2.0, -t * 0.85));
   float hotVeil = smoothstep(0.36, 0.86, thickVeil + fog * 0.18);
@@ -304,6 +297,7 @@ function drawGrains(now, dt) {
   const shakeY = (Math.cos(t * 1.7) + Math.sin(t * 4.3) * 0.35) * height * 0.01;
   const roll = Math.sin(t * 1.2) * 0.025 + Math.sin(t * 3.8) * 0.012;
   const gust = Math.sin(t * 1.6) * 0.8 + Math.sin(t * 4.2) * 0.28;
+  const shutter = 0.72 + (Math.sin(t * 18.0) * 0.5 + 0.5) * 0.28;
 
   grainCtx.setTransform(1, 0, 0, 1, 0, 0);
   grainCtx.clearRect(0, 0, width, height);
@@ -331,14 +325,14 @@ function drawGrains(now, dt) {
     const osx = centerX + (oldX / oldZ) * focal;
     const osy = centerY + (oldY / oldZ) * focal;
     const perspective = Math.min(5.5, 1 / Math.max(0.08, p.z));
-    const alpha = Math.min(0.95, 0.16 + perspective * 0.24) * p.warmth;
+    const alpha = Math.min(0.95, 0.16 + perspective * 0.24) * p.warmth * shutter;
     const size = p.size * perspective;
 
     if (sx < -80 || sx > width + 80 || sy < -80 || sy > height + 80) continue;
 
-    const red = Math.round(210 + p.warmth * 45);
-    const green = Math.round(74 + p.warmth * 56);
-    const blue = Math.round(14 + p.warmth * 18);
+    const red = Math.round(222 + p.warmth * 30);
+    const green = Math.round(68 + p.warmth * 48);
+    const blue = Math.round(8 + p.warmth * 14);
     grainCtx.strokeStyle = `rgba(${red}, ${green}, ${blue}, ${alpha * 0.34})`;
     grainCtx.lineWidth = Math.max(0.4, size * 0.2);
     grainCtx.beginPath();
@@ -348,17 +342,22 @@ function drawGrains(now, dt) {
 
     grainCtx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${alpha})`;
     grainCtx.beginPath();
-    grainCtx.arc(sx, sy, Math.max(0.28, size * 0.34), 0, Math.PI * 2);
+    const radius = Math.max(0.28, size * 0.34);
+    grainCtx.ellipse(sx, sy, radius * randomBetween(0.65, 1.25), radius * randomBetween(0.45, 0.92), p.phase + t, 0, Math.PI * 2);
     grainCtx.fill();
   }
 
   grainCtx.globalCompositeOperation = "source-over";
-  grainCtx.fillStyle = "rgba(61, 20, 5, 0.22)";
-  for (let i = 0; i < 140; i += 1) {
-    const x = (Math.sin(i * 78.233 + t * 6.7) * 0.5 + 0.5) * width;
-    const y = (Math.sin(i * 31.131 - t * 4.3) * 0.5 + 0.5) * height;
-    const r = 0.45 + (Math.sin(i * 9.17) * 0.5 + 0.5) * 1.1;
-    grainCtx.fillRect(x, y, r, r);
+  for (let i = 0; i < 170; i += 1) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const r = randomBetween(0.16, 0.92);
+    const a = randomBetween(0.018, 0.07);
+    const warm = Math.random() < 0.5;
+    grainCtx.fillStyle = warm ? `rgba(217, 77, 20, ${a * 0.42})` : `rgba(18, 7, 3, ${a})`;
+    grainCtx.beginPath();
+    grainCtx.ellipse(x, y, r * randomBetween(1.1, 2.8), r * randomBetween(0.42, 0.95), randomBetween(0, Math.PI), 0, Math.PI * 2);
+    grainCtx.fill();
   }
 
   grainCtx.setTransform(1, 0, 0, 1, 0, 0);

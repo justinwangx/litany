@@ -1,9 +1,9 @@
 :root {
   color-scheme: dark;
-  --text: #b8fff6;
-  --text-soft: rgba(190, 255, 249, 0.9);
-  --text-dim: rgba(91, 226, 214, 0.58);
-  --shadow: rgba(4, 14, 15, 0.86);
+  --text: #c9f4ec;
+  --text-soft: rgba(205, 238, 230, 0.88);
+  --text-dim: rgba(108, 178, 170, 0.48);
+  --shadow: rgba(5, 9, 8, 0.9);
 }
 
 * {
@@ -15,6 +15,7 @@ body {
   width: 100%;
   min-height: 100%;
   margin: 0;
+  cursor: none;
 }
 
 body {
@@ -22,6 +23,10 @@ body {
   background: #080504;
   color: var(--text);
   font-family: Inter, system-ui, sans-serif;
+}
+
+body * {
+  cursor: none;
 }
 
 canvas,
@@ -39,6 +44,7 @@ canvas,
   margin: -5vh -5vw;
   transform-origin: 50% 50%;
   animation: handheldStorm 8s ease-in-out infinite;
+  filter: saturate(1.18) contrast(1.08) sepia(0.16);
 }
 
 #grains {
@@ -50,20 +56,49 @@ canvas,
   pointer-events: none;
   mix-blend-mode: screen;
   opacity: 0.88;
+  filter: saturate(1.22) contrast(1.05) blur(0.08px);
   transform-origin: 50% 50%;
   animation: handheldStorm 8s ease-in-out infinite reverse;
 }
 
 .grain {
   pointer-events: none;
-  opacity: 0.18;
-  mix-blend-mode: overlay;
+  z-index: 4;
+  opacity: 0.92;
+  mix-blend-mode: normal;
   background-image:
-    radial-gradient(circle at 30% 20%, rgba(255, 240, 206, 0.42) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 80% 10%, rgba(255, 169, 74, 0.32) 0 1px, transparent 1.6px),
-    radial-gradient(circle at 15% 85%, rgba(38, 18, 8, 0.62) 0 1px, transparent 1.8px);
-  background-size: 61px 67px, 113px 127px, 43px 47px;
-  animation: sandDrift 1.8s linear infinite;
+    radial-gradient(ellipse at 16% 88%, rgba(255, 73, 19, 0.24), transparent 38%),
+    radial-gradient(ellipse at 84% 18%, rgba(20, 86, 81, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(18, 4, 0, 0.14), transparent 18%, transparent 78%, rgba(20, 5, 0, 0.16));
+  animation: filmPulse 6.4s steps(7, end) infinite;
+}
+
+.grain::before,
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.grain::before {
+  opacity: 0.24;
+  mix-blend-mode: soft-light;
+  background:
+    radial-gradient(ellipse at 18% 14%, rgba(31, 91, 84, 0.28), transparent 34%),
+    radial-gradient(ellipse at 82% 86%, rgba(138, 33, 7, 0.24), transparent 38%),
+    linear-gradient(90deg, rgba(0, 24, 22, 0.18), transparent 24%, transparent 76%, rgba(72, 16, 0, 0.15));
+  animation: gateWeave 7s ease-in-out infinite;
+}
+
+.grain::after {
+  opacity: 0.18;
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(116deg, transparent 0 36%, rgba(228, 116, 42, 0.16) 48%, transparent 58%),
+    radial-gradient(ellipse at 6% 70%, rgba(211, 54, 16, 0.2), transparent 30%);
+  filter: blur(14px);
+  animation: lightLeak 10s ease-in-out infinite;
 }
 
 .litany-shell {
@@ -80,8 +115,8 @@ canvas,
   z-index: -2;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 51%, rgba(71, 255, 230, 0.12), transparent 18%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 22%, transparent 76%, rgba(0, 0, 0, 0.24));
+    radial-gradient(circle at 50% 51%, rgba(52, 190, 176, 0.11), transparent 23%),
+    linear-gradient(180deg, rgba(10, 3, 0, 0.1), transparent 24%, transparent 76%, rgba(12, 4, 0, 0.12));
 }
 
 .litany-shell::after {
@@ -89,7 +124,7 @@ canvas,
   z-index: -1;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.24), transparent 30%, transparent 72%, rgba(0, 0, 0, 0.3));
+    radial-gradient(ellipse at 50% 54%, transparent 0 48%, rgba(9, 3, 1, 0.12) 100%);
 }
 
 .poem-stage {
@@ -101,9 +136,9 @@ canvas,
   text-align: center;
   text-shadow:
     0 2px 16px var(--shadow),
-    0 0 20px rgba(60, 255, 232, 0.36),
-    0 0 70px rgba(30, 188, 177, 0.18);
+    0 0 26px rgba(49, 178, 166, 0.2);
   transform: translateY(2vh);
+  animation: textDrift 10s ease-in-out infinite;
 }
 
 .poem {
@@ -113,12 +148,11 @@ canvas,
   min-height: 7.2rem;
   margin: 0 auto;
   color: var(--text-soft);
-  font-family: Inter, system-ui, sans-serif;
-  font-size: clamp(0.7rem, 1.25vw, 1.05rem);
+  font-family: "Newsreader", Georgia, serif;
+  font-size: clamp(0.76rem, 1.12vw, 1rem);
   font-weight: 500;
-  line-height: 1.72;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  line-height: 1.66;
+  letter-spacing: 0.018em;
 }
 
 .poem p {
@@ -173,10 +207,11 @@ canvas,
     filter: blur(0);
     transform: translateY(-50%) scale(1);
     text-shadow:
-      0 1px 14px rgba(0, 0, 0, 0.88),
-      0 0 10px rgba(84, 255, 234, 0.68),
-      0 0 30px rgba(24, 225, 213, 0.32),
-      0 0 72px rgba(20, 140, 146, 0.26);
+      0 1px 12px rgba(0, 0, 0, 0.9),
+      0.7px 0 0 rgba(212, 89, 34, 0.16),
+      -0.7px 0 0 rgba(64, 210, 198, 0.24),
+      0 0 16px rgba(75, 216, 203, 0.22),
+      0 0 46px rgba(31, 125, 119, 0.18);
   }
 
   16%,
@@ -188,9 +223,69 @@ canvas,
   }
 }
 
-@keyframes sandDrift {
-  to {
-    background-position: 61px 67px, -113px 127px, 43px -47px;
+@keyframes filmPulse {
+  0%,
+  100% {
+    opacity: 0.96;
+    transform: translate3d(0, 0, 0);
+  }
+
+  28% {
+    opacity: 0.88;
+    transform: translate3d(-0.24vw, 0.12vh, 0);
+  }
+
+  63% {
+    opacity: 1;
+    transform: translate3d(0.16vw, -0.18vh, 0);
+  }
+}
+
+@keyframes gateWeave {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  36% {
+    transform: translate3d(0.45vw, -0.2vh, 0) rotate(0.08deg);
+  }
+
+  64% {
+    transform: translate3d(-0.35vw, 0.25vh, 0) rotate(-0.06deg);
+  }
+}
+
+@keyframes lightLeak {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: translate3d(-3vw, 2vh, 0) scale(1.05);
+  }
+
+  42% {
+    opacity: 0.3;
+    transform: translate3d(2vw, -1vh, 0) scale(1.18);
+  }
+
+  70% {
+    opacity: 0.18;
+    transform: translate3d(4vw, 3vh, 0) scale(1.08);
+  }
+}
+
+@keyframes textDrift {
+  0%,
+  100% {
+    transform: translate3d(-0.15vw, 1.8vh, 0);
+  }
+
+  38% {
+    transform: translate3d(0.22vw, 2.2vh, 0);
+  }
+
+  72% {
+    transform: translate3d(-0.05vw, 1.5vh, 0);
   }
 }
 
@@ -237,9 +332,9 @@ canvas,
   .poem {
     max-width: 330px;
     min-height: 9.5rem;
-    font-size: clamp(0.62rem, 2.7vw, 0.78rem);
+    font-size: clamp(0.68rem, 2.65vw, 0.82rem);
     line-height: 1.62;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.01em;
   }
 }
 
@@ -247,6 +342,7 @@ canvas,
   .grain,
   #desert,
   #grains,
+  .poem-stage,
   .poem p {
     animation: none;
   }
