@@ -41,6 +41,9 @@ out vec4 fragColor;
 uniform vec2 uResolution;
 uniform vec2 uPointer;
 uniform float uTime;
+uniform float uMotionTime;
+uniform float uCalm;
+uniform float uProgress;
 
 #define TAU 6.28318530718
 
@@ -100,22 +103,24 @@ vec3 grade(vec3 color) {
 }
 
 float projectedGrains(vec2 uv, float scale, float speed, float size, float tail, float density, float seed, float outness) {
+  float t = uMotionTime;
+  float chaos = 1.0 - uCalm;
   vec2 center = vec2(
-    0.16 * sin(uTime * (0.41 + seed * 0.003) + seed),
-    -0.03 + 0.12 * cos(uTime * (0.36 + seed * 0.002) + seed * 1.7)
+    0.16 * sin(t * (0.41 + seed * 0.003) + seed) * chaos,
+    -0.03 + 0.12 * cos(t * (0.36 + seed * 0.002) + seed * 1.7) * chaos
   );
   vec2 wind = normalize(vec2(-0.58, 0.22));
   vec2 radial = normalize(uv - center + 0.0001);
-  vec2 layerGust = normalize(vec2(sin(seed * 2.4 + uTime * 0.9), cos(seed * 1.7 - uTime * 0.6)));
+  vec2 layerGust = normalize(vec2(sin(seed * 2.4 + t * 0.9), cos(seed * 1.7 - t * 0.6)));
   vec2 baseDir = normalize(mix(wind + layerGust * 0.24, radial, outness));
-  vec2 p = uv - baseDir * uTime * speed;
-  p += vec2(sin(uTime * 1.7 + seed), cos(uTime * 1.3 - seed)) * 0.035;
+  vec2 p = uv - baseDir * t * speed;
+  p += vec2(sin(t * 1.7 + seed), cos(t * 1.3 - seed)) * 0.035 * chaos;
 
   vec2 grid = p * scale;
   vec2 id = floor(grid);
   vec2 f = fract(grid);
   vec2 rnd = hash22(id + seed * 23.7);
-  float alive = step(1.0 - density, rnd.x);
+  float alive = step(1.0 - density * (0.18 + chaos * 0.82), rnd.x);
   vec2 local = rnd - f;
   vec2 screenPos = uv + local / scale;
   vec2 outDir = normalize(screenPos - center + (rnd - 0.5) * 0.45 + layerGust * 0.12);
@@ -127,7 +132,7 @@ float projectedGrains(vec2 uv, float scale, float speed, float size, float tail,
   float smear = exp(-(perp * perp) / max(0.00001, size * size * 0.42));
   smear *= smoothstep(size * tail, -size * 0.8, along) * smoothstep(-size * tail * 1.1, size * 0.7, along);
   float glint = 0.45 + rnd.y * 1.1;
-  return alive * (dotCore * 1.08 + smear * 0.055) * glint;
+  return alive * (dotCore * 1.08 + smear * 0.055 * chaos) * glint * (0.22 + chaos * 0.78);
 }
 
 float lensHits(vec2 uv, float scale, float speed, float seed) {
@@ -146,10 +151,11 @@ float lensHits(vec2 uv, float scale, float speed, float seed) {
 }
 
 vec3 storm(vec2 uv) {
-  float t = uTime;
-  vec2 cam = cameraOffset(t);
-  float roll = sin(t * 0.74) * 0.075 + sin(t * 2.4) * 0.032 + sin(t * 5.1) * 0.014;
-  float push = 1.05 + sin(t * 1.5) * 0.042 + sin(t * 3.3) * 0.018;
+  float t = uMotionTime;
+  float chaos = 1.0 - uCalm;
+  vec2 cam = cameraOffset(t) * chaos;
+  float roll = (sin(t * 0.74) * 0.075 + sin(t * 2.4) * 0.032 + sin(t * 5.1) * 0.014) * chaos;
+  float push = 1.025 + (0.025 + sin(t * 1.5) * 0.042 + sin(t * 3.3) * 0.018) * chaos;
   uv = rot(roll) * (uv * push) + cam;
 
   vec2 q = uv;
@@ -176,32 +182,40 @@ vec3 storm(vec2 uv) {
   float nearDust = projectedGrains(uv * 1.08 + vec2(0.04, -0.02), 25.0, 9.1, 0.096, 1.0, 0.6, 29.0, 0.52);
   float frontDust = projectedGrains(uv, 10.0, 12.5, 0.18, 1.15, 0.56, 47.0, 0.68);
 
-  color += vec3(0.92, 0.28, 0.055) * fineDust * 0.07;
-  color += vec3(1.0, 0.36, 0.075) * midDust * 0.1;
-  color += vec3(1.0, 0.42, 0.09) * nearDust * 0.12;
-  color += vec3(1.0, 0.36, 0.065) * frontDust * 0.12;
+  float dustEnergy = 0.22 + chaos * 0.92;
+  color += vec3(0.92, 0.28, 0.055) * fineDust * 0.07 * dustEnergy;
+  color += vec3(1.0, 0.36, 0.075) * midDust * 0.1 * dustEnergy;
+  color += vec3(1.0, 0.42, 0.09) * nearDust * 0.12 * dustEnergy;
+  color += vec3(1.0, 0.36, 0.065) * frontDust * 0.12 * dustEnergy;
 
   float filmGrit = fbm(uv * vec2(78.0, 46.0) + vec2(t * 5.2, -t * 3.7));
-  color += vec3(0.12, 0.03, 0.006) * (filmGrit - 0.5) * 0.08;
+  color += vec3(0.12, 0.03, 0.006) * (filmGrit - 0.5) * (0.04 + chaos * 0.05);
 
   float thickVeil = fbm(uv * vec2(1.8, 2.7) + vec2(t * 2.0, -t * 0.85));
   float hotVeil = smoothstep(0.36, 0.86, thickVeil + fog * 0.18);
-  color = mix(color, vec3(0.95, 0.28, 0.045), hotVeil * 0.28);
+  color = mix(color, vec3(0.95, 0.28, 0.045), hotVeil * (0.12 + chaos * 0.18));
 
   float frameBurn = smoothstep(1.2, 0.18, length(uv * vec2(0.72, 0.95)));
   color = mix(color * 0.86, color, frameBurn * 0.35 + 0.65);
   color += vec3(0.7, 0.18, 0.03) * (1.0 - frameBurn) * 0.08;
 
   float tealHole = smoothstep(0.58, 0.08, length(uv - cam * 0.35));
-  color += vec3(0.0, 0.12, 0.1) * tealHole * 0.12;
+  color += vec3(0.0, 0.14, 0.12) * tealHole * (0.1 + uCalm * 0.16);
 
-  return grade(color);
+  vec3 graded = grade(color);
+  float collapse = smoothstep(0.88, 1.0, uProgress);
+  float auraRadius = mix(0.78, 0.055, collapse);
+  float auraAlpha = smoothstep(0.24, 0.92, uCalm) * (1.0 - collapse);
+  float calmAura = auraAlpha * smoothstep(auraRadius, auraRadius * 0.18, length(uv));
+  graded = mix(graded, vec3(0.34, 0.72, 0.66), calmAura * 0.11);
+  return graded;
 }
 
 void main() {
   vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / uResolution.y;
   vec2 raw = uv;
-  uv += (vec2(fbm(raw * 2.0 + uTime * 0.9), fbm(raw * 2.3 - uTime * 0.7)) - 0.5) * 0.035;
+  float chaos = 1.0 - uCalm;
+  uv += (vec2(fbm(raw * 2.0 + uMotionTime * 0.9), fbm(raw * 2.3 - uMotionTime * 0.7)) - 0.5) * (0.006 + chaos * 0.033);
   fragColor = vec4(storm(uv), 1.0);
 }
 `;
@@ -236,17 +250,32 @@ const uniforms = {
   resolution: gl.getUniformLocation(program, "uResolution"),
   pointer: gl.getUniformLocation(program, "uPointer"),
   time: gl.getUniformLocation(program, "uTime"),
+  motionTime: gl.getUniformLocation(program, "uMotionTime"),
+  calm: gl.getUniformLocation(program, "uCalm"),
+  progress: gl.getUniformLocation(program, "uProgress"),
 };
 
 let pointer = { x: 0.52, y: 0.5 };
 let renderedStill = false;
+let startTime = 0;
 let lastFrame = 0;
+let motionTime = 0;
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const litanyDuration = 40;
 const particles = [];
 const particleCount = 1200;
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function smoothstep(edge0, edge1, value) {
+  const x = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  return x * x * (3 - 2 * x);
 }
 
 function resetParticle(p, burst = false) {
@@ -273,6 +302,12 @@ for (let i = 0; i < particleCount; i += 1) {
   particles.push(particle);
 }
 
+function resetParticles() {
+  for (const particle of particles) {
+    resetParticle(particle);
+  }
+}
+
 function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const width = Math.floor(window.innerWidth * dpr);
@@ -286,18 +321,20 @@ function resize() {
   }
 }
 
-function drawGrains(now, dt) {
+function drawGrains(now, dt, calm) {
   const width = grainCanvas.width;
   const height = grainCanvas.height;
-  const t = now * 0.001;
-  const centerX = width * (0.5 + (pointer.x - 0.5) * 0.04);
-  const centerY = height * (0.51 - (pointer.y - 0.5) * 0.04);
-  const focal = Math.min(width, height) * (0.54 + Math.sin(t * 1.7) * 0.025);
-  const shakeX = (Math.sin(t * 2.1) + Math.sin(t * 5.7) * 0.35) * width * 0.011;
-  const shakeY = (Math.cos(t * 1.7) + Math.sin(t * 4.3) * 0.35) * height * 0.01;
-  const roll = Math.sin(t * 1.2) * 0.025 + Math.sin(t * 3.8) * 0.012;
-  const gust = Math.sin(t * 1.6) * 0.8 + Math.sin(t * 4.2) * 0.28;
-  const shutter = 0.72 + (Math.sin(t * 18.0) * 0.5 + 0.5) * 0.28;
+  const t = now;
+  const chaos = 1 - calm;
+  const motion = Math.pow(chaos, 1.45);
+  const centerX = width * (0.5 + (pointer.x - 0.5) * 0.04 * chaos);
+  const centerY = height * (0.51 - (pointer.y - 0.5) * 0.04 * chaos);
+  const focal = Math.min(width, height) * (0.54 + Math.sin(t * 1.7) * 0.025 * chaos);
+  const shakeX = (Math.sin(t * 2.1) + Math.sin(t * 5.7) * 0.35) * width * 0.011 * chaos;
+  const shakeY = (Math.cos(t * 1.7) + Math.sin(t * 4.3) * 0.35) * height * 0.01 * chaos;
+  const roll = (Math.sin(t * 1.2) * 0.025 + Math.sin(t * 3.8) * 0.012) * chaos;
+  const gust = (Math.sin(t * 1.6) * 0.8 + Math.sin(t * 4.2) * 0.28) * chaos;
+  const shutter = 0.82 + (Math.sin(t * 18.0) * 0.5 + 0.5) * 0.18 * chaos;
 
   grainCtx.setTransform(1, 0, 0, 1, 0, 0);
   grainCtx.clearRect(0, 0, width, height);
@@ -311,9 +348,9 @@ function drawGrains(now, dt) {
     const oldX = p.x;
     const oldY = p.y;
     const gustCurl = Math.sin(t * 2.4 + p.phase + p.z * 5.0);
-    p.z -= dt * p.speed * (0.42 + Math.max(0, gust) * 0.22);
-    p.x += dt * (p.vx + gustCurl * 0.055 - gust * 0.06);
-    p.y += dt * (p.vy + Math.cos(t * 1.8 + p.phase) * 0.045);
+    p.z -= dt * p.speed * motion * (0.42 + Math.max(0, gust) * 0.22);
+    p.x += dt * motion * (p.vx + gustCurl * 0.055 - gust * 0.06);
+    p.y += dt * motion * (p.vy + Math.cos(t * 1.8 + p.phase) * 0.045);
 
     if (p.z < 0.035 || Math.abs(p.x / Math.max(p.z, 0.05)) > 2.2 || Math.abs(p.y / Math.max(p.z, 0.05)) > 1.7) {
       resetParticle(p, true);
@@ -325,7 +362,8 @@ function drawGrains(now, dt) {
     const osx = centerX + (oldX / oldZ) * focal;
     const osy = centerY + (oldY / oldZ) * focal;
     const perspective = Math.min(5.5, 1 / Math.max(0.08, p.z));
-    const alpha = Math.min(0.95, 0.16 + perspective * 0.24) * p.warmth * shutter;
+    const calmFade = 0.18 + chaos * 0.82;
+    const alpha = Math.min(0.95, 0.16 + perspective * 0.24) * p.warmth * shutter * calmFade;
     const size = p.size * perspective;
 
     if (sx < -80 || sx > width + 80 || sy < -80 || sy > height + 80) continue;
@@ -333,7 +371,7 @@ function drawGrains(now, dt) {
     const red = Math.round(222 + p.warmth * 30);
     const green = Math.round(68 + p.warmth * 48);
     const blue = Math.round(8 + p.warmth * 14);
-    grainCtx.strokeStyle = `rgba(${red}, ${green}, ${blue}, ${alpha * 0.34})`;
+    grainCtx.strokeStyle = `rgba(${red}, ${green}, ${blue}, ${alpha * 0.34 * chaos})`;
     grainCtx.lineWidth = Math.max(0.4, size * 0.2);
     grainCtx.beginPath();
     grainCtx.moveTo(osx, osy);
@@ -352,7 +390,7 @@ function drawGrains(now, dt) {
     const x = Math.random() * width;
     const y = Math.random() * height;
     const r = randomBetween(0.16, 0.92);
-    const a = randomBetween(0.018, 0.07);
+    const a = randomBetween(0.018, 0.07) * (0.28 + chaos * 0.72);
     const warm = Math.random() < 0.5;
     grainCtx.fillStyle = warm ? `rgba(217, 77, 20, ${a * 0.42})` : `rgba(18, 7, 3, ${a})`;
     grainCtx.beginPath();
@@ -365,35 +403,79 @@ function drawGrains(now, dt) {
 
 function render(now) {
   resize();
+  if (!startTime) startTime = now;
   const dt = Math.min(0.04, Math.max(0.001, (now - lastFrame) / 1000 || 0.016));
   lastFrame = now;
+  const elapsed = (now - startTime) / 1000;
+  const progress = reduceMotion.matches ? 1 : clamp(elapsed / litanyDuration, 0, 1);
+  const calm = Math.pow(smoothstep(0.1, 1, progress), 1.18);
+  const chaos = 1 - calm;
+  motionTime += dt * Math.pow(chaos, 1.35) * 1.75;
   gl.useProgram(program);
   gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
   gl.uniform2f(uniforms.pointer, pointer.x, pointer.y);
-  gl.uniform1f(uniforms.time, now * 0.001);
+  gl.uniform1f(uniforms.time, elapsed);
+  gl.uniform1f(uniforms.motionTime, motionTime);
+  gl.uniform1f(uniforms.calm, calm);
+  gl.uniform1f(uniforms.progress, progress);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
-  drawGrains(now, dt);
+  drawGrains(motionTime, dt, calm);
 
-  if (reduceMotion.matches) {
+  if (reduceMotion.matches || progress >= 1) {
     renderedStill = true;
+    document.body.classList.add("is-ended");
     return;
   }
   requestAnimationFrame(render);
 }
 
-window.addEventListener("resize", resize);
+window.addEventListener("resize", () => {
+  resize();
+  if (renderedStill) requestAnimationFrame(render);
+});
+
+function restartScene() {
+  if (!renderedStill) return;
+
+  document.body.classList.add("is-resetting");
+  document.body.offsetWidth;
+  startTime = 0;
+  lastFrame = 0;
+  motionTime = 0;
+  renderedStill = false;
+  document.body.classList.remove("is-ended");
+  resetParticles();
+  grainCtx.setTransform(1, 0, 0, 1, 0, 0);
+  grainCtx.clearRect(0, 0, grainCanvas.width, grainCanvas.height);
+  document.body.classList.remove("is-resetting");
+  requestAnimationFrame(render);
+}
+
+window.addEventListener("click", restartScene);
+
+window.addEventListener("keydown", (event) => {
+  if (event.code !== "Space") return;
+  if (renderedStill) {
+    event.preventDefault();
+    restartScene();
+  }
+});
+
 window.addEventListener("pointermove", (event) => {
   pointer = {
     x: event.clientX / Math.max(1, window.innerWidth),
     y: 1 - event.clientY / Math.max(1, window.innerHeight),
   };
-  if (reduceMotion.matches && renderedStill) {
+  if (renderedStill) {
     requestAnimationFrame(render);
   }
 });
 
 reduceMotion.addEventListener("change", () => {
+  startTime = 0;
+  motionTime = 0;
   renderedStill = false;
+  document.body.classList.remove("is-ended");
   requestAnimationFrame(render);
 });
 

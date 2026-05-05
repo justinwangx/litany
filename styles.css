@@ -1,5 +1,7 @@
 :root {
   color-scheme: dark;
+  --litany-duration: 40s;
+  --line-duration: 5s;
   --text: #c9f4ec;
   --text-soft: rgba(205, 238, 230, 0.88);
   --text-dim: rgba(108, 178, 170, 0.48);
@@ -43,7 +45,7 @@ canvas,
   height: 110vh;
   margin: -5vh -5vw;
   transform-origin: 50% 50%;
-  animation: handheldStorm 8s ease-in-out infinite;
+  animation: handheldStorm var(--litany-duration) cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
   filter: saturate(1.18) contrast(1.08) sepia(0.16);
 }
 
@@ -58,7 +60,7 @@ canvas,
   opacity: 0.88;
   filter: saturate(1.22) contrast(1.05) blur(0.08px);
   transform-origin: 50% 50%;
-  animation: handheldStorm 8s ease-in-out infinite reverse;
+  animation: handheldStorm var(--litany-duration) cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
 }
 
 .grain {
@@ -70,7 +72,7 @@ canvas,
     radial-gradient(ellipse at 16% 88%, rgba(255, 73, 19, 0.24), transparent 38%),
     radial-gradient(ellipse at 84% 18%, rgba(20, 86, 81, 0.14), transparent 42%),
     linear-gradient(180deg, rgba(18, 4, 0, 0.14), transparent 18%, transparent 78%, rgba(20, 5, 0, 0.16));
-  animation: filmPulse 6.4s steps(7, end) infinite;
+  animation: filmPulse var(--litany-duration) steps(12, end) 1 forwards;
 }
 
 .grain::before,
@@ -88,7 +90,7 @@ canvas,
     radial-gradient(ellipse at 18% 14%, rgba(31, 91, 84, 0.28), transparent 34%),
     radial-gradient(ellipse at 82% 86%, rgba(138, 33, 7, 0.24), transparent 38%),
     linear-gradient(90deg, rgba(0, 24, 22, 0.18), transparent 24%, transparent 76%, rgba(72, 16, 0, 0.15));
-  animation: gateWeave 7s ease-in-out infinite;
+  animation: gateWeave var(--litany-duration) cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
 }
 
 .grain::after {
@@ -98,7 +100,7 @@ canvas,
     linear-gradient(116deg, transparent 0 36%, rgba(228, 116, 42, 0.16) 48%, transparent 58%),
     radial-gradient(ellipse at 6% 70%, rgba(211, 54, 16, 0.2), transparent 30%);
   filter: blur(14px);
-  animation: lightLeak 10s ease-in-out infinite;
+  animation: lightLeak var(--litany-duration) cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
 }
 
 .litany-shell {
@@ -117,6 +119,7 @@ canvas,
   background:
     radial-gradient(circle at 50% 51%, rgba(52, 190, 176, 0.11), transparent 23%),
     linear-gradient(180deg, rgba(10, 3, 0, 0.1), transparent 24%, transparent 76%, rgba(12, 4, 0, 0.12));
+  animation: calmHaze var(--litany-duration) cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
 }
 
 .litany-shell::after {
@@ -138,7 +141,7 @@ canvas,
     0 2px 16px var(--shadow),
     0 0 26px rgba(49, 178, 166, 0.2);
   transform: translateY(2vh);
-  animation: textDrift 10s ease-in-out infinite;
+  animation: textDrift var(--litany-duration) cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
 }
 
 .poem {
@@ -161,7 +164,7 @@ canvas,
   margin: 0;
   opacity: 0;
   transform: translateY(-42%) scale(0.985);
-  animation: singleLine 35s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: lineReveal var(--line-duration) cubic-bezier(0.22, 1, 0.36, 1) 1 both;
 }
 
 .poem p:nth-child(1) {
@@ -192,16 +195,31 @@ canvas,
   animation-delay: 30s;
 }
 
-@keyframes singleLine {
+.poem p:nth-child(8) {
+  animation-delay: 35s;
+}
+
+body.is-resetting #desert,
+body.is-resetting #grains,
+body.is-resetting .grain,
+body.is-resetting .grain::before,
+body.is-resetting .grain::after,
+body.is-resetting .litany-shell::before,
+body.is-resetting .poem-stage,
+body.is-resetting .poem p {
+  animation: none !important;
+}
+
+@keyframes lineReveal {
   0%,
-  3% {
+  8% {
     opacity: 0;
     filter: blur(5px);
     transform: translateY(-34%) scale(0.985);
   }
 
-  7%,
-  12% {
+  22%,
+  68% {
     color: var(--text);
     opacity: 1;
     filter: blur(0);
@@ -214,7 +232,6 @@ canvas,
       0 0 46px rgba(31, 125, 119, 0.18);
   }
 
-  16%,
   100% {
     color: var(--text-dim);
     opacity: 0;
@@ -223,28 +240,50 @@ canvas,
   }
 }
 
-@keyframes filmPulse {
-  0%,
+@keyframes calmHaze {
+  0% {
+    opacity: 0.72;
+  }
+
+  58% {
+    opacity: 0.86;
+  }
+
+  88% {
+    opacity: 0.78;
+  }
+
   100% {
-    opacity: 0.96;
-    transform: translate3d(0, 0, 0);
+    opacity: 0;
   }
+}
 
-  28% {
-    opacity: 0.88;
-    transform: translate3d(-0.24vw, 0.12vh, 0);
-  }
-
-  63% {
+@keyframes filmPulse {
+  0% {
     opacity: 1;
-    transform: translate3d(0.16vw, -0.18vh, 0);
+    transform: translate3d(-0.36vw, 0.2vh, 0);
+  }
+
+  22% {
+    opacity: 0.9;
+    transform: translate3d(0.24vw, -0.18vh, 0);
+  }
+
+  58% {
+    opacity: 0.8;
+    transform: translate3d(-0.12vw, 0.1vh, 0);
+  }
+
+  100% {
+    opacity: 0.66;
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes gateWeave {
   0%,
-  100% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
+  16% {
+    transform: translate3d(-0.6vw, 0.28vh, 0) rotate(-0.1deg);
   }
 
   36% {
@@ -252,66 +291,74 @@ canvas,
   }
 
   64% {
-    transform: translate3d(-0.35vw, 0.25vh, 0) rotate(-0.06deg);
+    transform: translate3d(-0.18vw, 0.12vh, 0) rotate(-0.04deg);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
   }
 }
 
 @keyframes lightLeak {
   0%,
   100% {
-    opacity: 0.12;
-    transform: translate3d(-3vw, 2vh, 0) scale(1.05);
+    opacity: 0.08;
+    transform: translate3d(0, 0, 0) scale(1.02);
   }
 
-  42% {
-    opacity: 0.3;
-    transform: translate3d(2vw, -1vh, 0) scale(1.18);
+  24% {
+    opacity: 0.28;
+    transform: translate3d(-3vw, 2vh, 0) scale(1.12);
   }
 
-  70% {
+  56% {
     opacity: 0.18;
-    transform: translate3d(4vw, 3vh, 0) scale(1.08);
+    transform: translate3d(2vw, -1vh, 0) scale(1.18);
   }
 }
 
 @keyframes textDrift {
   0%,
-  100% {
-    transform: translate3d(-0.15vw, 1.8vh, 0);
+  16% {
+    transform: translate3d(-0.4vw, 2.15vh, 0);
   }
 
-  38% {
+  42% {
     transform: translate3d(0.22vw, 2.2vh, 0);
   }
 
-  72% {
+  70% {
     transform: translate3d(-0.05vw, 1.5vh, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 1.2vh, 0);
   }
 }
 
 @keyframes handheldStorm {
   0% {
-    transform: translate3d(-1.2vw, 0.6vh, 0) rotate(-0.45deg) scale(1.02);
+    transform: translate3d(-1.8vw, 0.9vh, 0) rotate(-0.75deg) scale(1.045);
   }
 
   17% {
-    transform: translate3d(1.1vw, -0.8vh, 0) rotate(0.65deg) scale(1.035);
+    transform: translate3d(1.5vw, -1vh, 0) rotate(0.8deg) scale(1.055);
   }
 
   36% {
-    transform: translate3d(-0.3vw, 1vh, 0) rotate(0.18deg) scale(1.02);
+    transform: translate3d(-0.8vw, 0.7vh, 0) rotate(0.26deg) scale(1.036);
   }
 
   58% {
-    transform: translate3d(1.4vw, 0.2vh, 0) rotate(-0.7deg) scale(1.04);
+    transform: translate3d(0.55vw, 0.12vh, 0) rotate(-0.22deg) scale(1.026);
   }
 
   76% {
-    transform: translate3d(-1vw, -0.7vh, 0) rotate(0.42deg) scale(1.025);
+    transform: translate3d(-0.2vw, -0.16vh, 0) rotate(0.08deg) scale(1.016);
   }
 
   100% {
-    transform: translate3d(-1.2vw, 0.6vh, 0) rotate(-0.45deg) scale(1.02);
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1.01);
   }
 }
 
