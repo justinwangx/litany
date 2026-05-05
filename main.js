@@ -1,3 +1,4 @@
+import { createLitanyAudio } from "./audio.js";
 import { fragmentSource, vertexSource } from "./shaders.js";
 
 const canvas = document.querySelector("#desert");
@@ -58,8 +59,13 @@ let lastFrame = 0;
 let motionTime = 0;
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const litanyDuration = 40;
+const litanyAudio = createLitanyAudio();
 const particles = [];
 const particleCount = 1200;
+
+function tryStartAudio() {
+  void litanyAudio.start();
+}
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
@@ -216,6 +222,7 @@ function render(now) {
   gl.uniform1f(uniforms.progress, progress);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   drawGrains(motionTime, dt, calm);
+  litanyAudio.update({ progress, calm, elapsed, motionTime, pointer });
 
   if (reduceMotion.matches || progress >= 1) {
     renderedStill = true;
@@ -231,9 +238,11 @@ window.addEventListener("resize", () => {
 });
 
 function restartScene() {
+  tryStartAudio();
   if (!renderedStill) return;
 
   document.body.classList.add("is-resetting");
+  litanyAudio.restart();
   document.body.offsetWidth;
   startTime = 0;
   lastFrame = 0;
@@ -248,9 +257,11 @@ function restartScene() {
 }
 
 window.addEventListener("click", restartScene);
+window.addEventListener("pointerdown", tryStartAudio, { passive: true });
 
 window.addEventListener("keydown", (event) => {
   if (event.code !== "Space") return;
+  tryStartAudio();
   if (renderedStill) {
     event.preventDefault();
     restartScene();
@@ -275,4 +286,5 @@ reduceMotion.addEventListener("change", () => {
   requestAnimationFrame(render);
 });
 
+tryStartAudio();
 requestAnimationFrame(render);

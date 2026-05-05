@@ -23,5 +23,9 @@ The dust field is built from a few ingredients:
 The shader has two clocks. `uTime` is plain elapsed time. `uMotionTime` is allowed to slow down. As the litany approaches the end, JS raises `uCalm`, and `uMotionTime` advances less and less.
 The CSS text can keep finishing its sentence while the storm itself slows to a stop.
 
+The audio is procedural too. [audio.js](./audio.js) uses Web Audio for looped wind noise, high sand hiss, a low rumble, tiny filtered noise clicks for grains hitting the lens, and a quiet two-note tone that appears near the end.
+It follows the same `progress` and `calm` values as the shader, so the sound
+loses force with the image instead of feeling like a separate track.
+
 The whole sequence runs once. When it has ended, a click
 or the spacebar starts it again.
